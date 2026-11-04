@@ -1,0 +1,45 @@
+# Azure DevOps CI pipeline for the Mindmesh React (Vite) frontend.
+# Builds the app on every push to main and publishes the dist folder as an artifact.
+# Use this file at the repository root: azure-pipelines.yml
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '20.x'
+  buildDirectory: 'dist'
+
+steps:
+  - checkout: self
+
+  - task: NodeTool@0
+    displayName: 'Use Node.js $(nodeVersion)'
+    inputs:
+      versionSpec: '$(nodeVersion)'
+
+  - script: npm ci
+    displayName: 'Install dependencies (npm ci)'
+
+  - script: npm run build
+    displayName: 'Build Vite application'
+
+  - script: |
+      test -f dist/index.html
+      echo "Build artifact verified: dist/index.html"
+    displayName: 'Verify build output'
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish build artifact (dist)'
+    inputs:
+      targetPath: '$(buildDirectory)'
+      artifact: 'mindmesh-dist'
